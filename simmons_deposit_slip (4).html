@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simmons Bank Deposit Slip</title>
+    <style>
+        @font-face {
+            font-family: 'MICR';
+            src: local('MICR Encoding');
+        }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .controls label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .controls select, .controls input, .controls textarea {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .controls button {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .controls button:hover {
+            background-color: #0052a3;
+        }
+        .jotform-url {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .deposit-slip {
+            width: 3.36in;
+            height: 8.16in;
+            border: 2px solid #000;
+            padding: 0.14in;
+            padding-left: 0.34in;
+            padding-bottom: 0.3in;
+            background-color: #faf8f0;
+            position: relative;
+            box-sizing: border-box;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .slips-container {
+            display: flex;
+            gap: 0.3in;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .slip-label {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #666;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: bold;
+        }
+        .header h3 {
+            margin: 5px 0;
+            font-size: 13px;
+            font-weight: normal;
+        }
+        .company-info {
+            margin: 14px 0;
+            font-size: 12px;
+        }
+        .date-line {
+            border-bottom: 1px solid #000;
+            margin: 10px 0;
+            padding-bottom: 2px;
+        }
+        .date-line span {
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .disclaimer {
+            font-size: 7px;
+            border: 1px solid #000;
+            padding: 2px;
+            margin: 5px 0;
+            text-align: center;
+        }
+        .deposit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        .deposit-table td {
+            border: 1px solid #000;
+            padding: 2px 5px;
+            height: 13px;
+        }
+        .deposit-table .label-cell {
+            font-weight: bold;
+            width: 150px;
+        }
+        .deposit-table .amount-cell {
+            width: 80px;
+            text-align: right;
+        }
+        .deposit-table .cents-cell {
+            width: 50px;
+            text-align: center;
+        }
+        .check-row {
+            height: 12px;
+        }
+        .total-row {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        .footer-note {
+            font-size: 7px;
+            text-align: center;
+            margin-top: 3px;
+        }
+        .account-number {
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            transform: rotate(90deg) translateY(-50%);
+            transform-origin: left center;
+            font-family: 'MICR', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: normal;
+            white-space: nowrap;
+        }
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                box-shadow: none;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+            .controls {
+                display: none !important;
+            }
+            .slips-container {
+                display: flex;
+                gap: 0.3in;
+                justify-content: center;
+                page-break-after: always;
+            }
+            .deposit-slip {
+                border: 1px solid #000;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h3>Manual Entry Mode</h3>
+            <label for="location">Select Pharmacy Location:</label>
+            <select id="location" onchange="updateAccount()">
+                <option value="">-- Select Location --</option>
+                <option value="paris">1814 Paris Road</option>
+                <option value="broadway">1001 W Broadway</option>
+            </select>
+            
+            <label for="depositDate">Deposit Date:</label>
+            <input type="date" id="depositDate" value="">
+            
+            <label for="currencyAmount">Currency Amount (total dollars and cents):</label>
+            <input type="number" id="currencyAmount" step="0.01" placeholder="150.00">
+            
+            <label for="coinsAmount">Coins Amount (total dollars and cents):</label>
+            <input type="number" id="coinsAmount" step="0.01" placeholder="25.50">
+            
+            <label for="checksInput">Check Amounts (comma-separated):</label>
+            <textarea id="checksInput" rows="3" placeholder="45.50, 125.75, 89.00"></textarea>
+            
+            <label for="backsideAmount">Total from Backside/Attached List:</label>
+            <input type="number" id="backsideAmount" step="0.01" placeholder="0.00">
+            
+            <button onclick="populateFromForm()">Fill Deposit Slip</button>
+            <button onclick="clearForm()">Clear Form</button>
+            <button onclick="printSlip()">Print Deposit Slip</button>
+            
+            <div class="jotform-url">
+                <strong>For Jotform Integration:</strong><br>
+                After your form submission, redirect to this page with URL parameters. <br>
+                Example format: <code>?location=paris&date=2024-10-16&currency=150.00&coins=25.50&checks=45.50,125.75&backside=0</code>
+            </div>
+        </div>
+
+        <div class="slips-container">
+            <div class="deposit-slip" id="depositSlip1">
+                <div class="slip-label">BANK COPY</div>
+                <div class="header">
+                    <h2>DEPOSIT TICKET</h2>
+                    <h3>Simmons Bank</h3>
+                </div>
+                
+                <div class="company-info">
+                    <strong>D And H Prescription Drug Company</strong><br>
+                    1814 Paris Rd<br>
+                    Columbia, MO 65201-5538
+                </div>
+                
+                <div class="date-line">
+                    <span>DATE</span> <span class="displayDate">_________________________</span>
+                </div>
+                
+                <div class="disclaimer">
+                    CHECKS AND OTHER ITEMS RECEIVED FOR DEPOSIT SUBJECT TO THE PROVISIONS<br>
+                    OF THE UNIFORM COMMERCIAL CODE OR ANY APPLICABLE COLLECTION<br>
+                    AGREEMENT. DEPOSITS MAY NOT BE AVAILABLE FOR IMMEDIATE WITHDRAWAL.
+                </div>
+                
+                <table class="deposit-table">
+                    <tr>
+                        <td class="label-cell"></td>
+                        <td class="amount-cell"><strong>DOLLARS</strong></td>
+                        <td class="cents-cell"><strong>CENTS</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>CURRENCY</strong></td>
+                        <td class="amount-cell currency_dollars"></td>
+                        <td class="cents-cell currency_cents"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>COINS</strong></td>
+                        <td class="amount-cell coins_dollars"></td>
+                        <td class="cents-cell coins_cents"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>CHECKS</strong> <span style="font-size:8px;">LIST EACH<br>SEPARATELY</span></td>
+                        <td class="amount-cell"></td>
+                        <td class="cents-cell"></td>
+                    </tr>
+                </table>
+                
+                <table class="deposit-table" style="margin-top: -1px;">
+                    <tbody class="checkRows">
+                    </tbody>
+                    <tr class="total-row">
+                        <td class="label-cell">TOTAL BACKSIDE<br>OR ATTACHED LIST</td>
+                        <td class="amount-cell backside_dollars"></td>
+                        <td class="cents-cell"></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="label-cell" style="text-align:center;font-size:12px;">◄ <span style="font-size:7px;">PLEASE<br>RE-ENTER<br>TOTAL HERE</span> <strong>TOTAL</strong></td>
+                        <td class="amount-cell total_dollars" style="background:white;font-size:13px;">0</td>
+                        <td class="cents-cell total_cents" style="background:white;font-size:13px;">00</td>
+                    </tr>
+                </table>
+                
+                <div class="footer-note">
+                    USE OTHER SIDE FOR ADDITIONAL LISTING.<br>
+                    PLEASE BE SURE ALL ITEMS ARE PROPERLY ENDORSED.
+                </div>
+                
+                <div class="account-number accountNumber"></div>
+            </div>
+
+            <div class="deposit-slip" id="depositSlip2">
+                <div class="slip-label">YOUR COPY</div>
+                <div class="header">
+                    <h2>DEPOSIT TICKET</h2>
+                    <h3>Simmons Bank</h3>
+                </div>
+                
+                <div class="company-info">
+                    <strong>D And H Prescription Drug Company</strong><br>
+                    1814 Paris Rd<br>
+                    Columbia, MO 65201-5538
+                </div>
+                
+                <div class="date-line">
+                    <span>DATE</span> <span class="displayDate">_________________________</span>
+                </div>
+                
+                <div class="disclaimer">
+                    CHECKS AND OTHER ITEMS RECEIVED FOR DEPOSIT SUBJECT TO THE PROVISIONS<br>
+                    OF THE UNIFORM COMMERCIAL CODE OR ANY APPLICABLE COLLECTION<br>
+                    AGREEMENT. DEPOSITS MAY NOT BE AVAILABLE FOR IMMEDIATE WITHDRAWAL.
+                </div>
+                
+                <table class="deposit-table">
+                    <tr>
+                        <td class="label-cell"></td>
+                        <td class="amount-cell"><strong>DOLLARS</strong></td>
+                        <td class="cents-cell"><strong>CENTS</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>CURRENCY</strong></td>
+                        <td class="amount-cell currency_dollars"></td>
+                        <td class="cents-cell currency_cents"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>COINS</strong></td>
+                        <td class="amount-cell coins_dollars"></td>
+                        <td class="cents-cell coins_cents"></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell"><strong>CHECKS</strong> <span style="font-size:8px;">LIST EACH<br>SEPARATELY</span></td>
+                        <td class="amount-cell"></td>
+                        <td class="cents-cell"></td>
+                    </tr>
+                </table>
+                
+                <table class="deposit-table" style="margin-top: -1px;">
+                    <tbody class="checkRows">
+                    </tbody>
+                    <tr class="total-row">
+                        <td class="label-cell">TOTAL BACKSIDE<br>OR ATTACHED LIST</td>
+                        <td class="amount-cell backside_dollars"></td>
+                        <td class="cents-cell"></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="label-cell" style="text-align:center;font-size:10px;">◄ <span style="font-size:6px;">PLEASE<br>RE-ENTER<br>TOTAL HERE</span> <strong>TOTAL</strong></td>
+                        <td class="amount-cell total_dollars" style="background:white;font-size:11px;">0</td>
+                        <td class="cents-cell total_cents" style="background:white;font-size:11px;">00</td>
+                    </tr>
+                </table>
+                
+                <div class="footer-note">
+                    USE OTHER SIDE FOR ADDITIONAL LISTING.<br>
+                    PLEASE BE SURE ALL ITEMS ARE PROPERLY ENDORSED.
+                </div>
+                
+                <div class="account-number accountNumber"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const accounts = {
+            paris: {
+                number: "91000005015157",
+                full: ":5001: 0120: 91000005015157:"
+            },
+            broadway: {
+                number: "133891080",
+                full: ":5001: 0120: 133891080:"
+            },
+            "1814 Paris Road": {
+                number: "91000005015157",
+                full: ":5001: 0120: 91000005015157:"
+            },
+            "1001 W Broadway": {
+                number: "133891080",
+                full: ":5001: 0120: 133891080:"
+            }
+        };
+
+        function updateAccount() {
+            const location = document.getElementById('location').value;
+            const accountNums = document.querySelectorAll('.accountNumber');
+            
+            if (location && accounts[location]) {
+                accountNums.forEach(elem => {
+                    elem.textContent = accounts[location].full;
+                });
+            } else {
+                accountNums.forEach(elem => {
+                    elem.textContent = '';
+                });
+            }
+        }
+
+        document.getElementById('depositDate').valueAsDate = new Date();
+        updateDisplayDate();
+
+        document.getElementById('depositDate').addEventListener('change', updateDisplayDate);
+
+        function updateDisplayDate() {
+            const dateInput = document.getElementById('depositDate').value;
+            if (dateInput) {
+                const date = new Date(dateInput + 'T00:00:00');
+                const formatted = (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+                document.querySelectorAll('.displayDate').forEach(elem => {
+                    elem.textContent = formatted;
+                });
+            }
+        }
+
+        function createCheckRows() {
+            const tbodies = document.querySelectorAll('.checkRows');
+            tbodies.forEach(tbody => {
+                tbody.innerHTML = '';
+                for (let i = 1; i <= 27; i++) {
+                    const tr = document.createElement('tr');
+                    tr.className = 'check-row';
+                    tr.innerHTML = `
+                        <td style="text-align:center;font-weight:bold;width:40px;font-size:8px;">${i}</td>
+                        <td class="amount-cell check${i}_dollars" style="font-size:8px;"></td>
+                        <td class="cents-cell check${i}_cents" style="font-size:8px;"></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        createCheckRows();
+
+        function splitDollarsAndCents(amount) {
+            if (!amount || amount === 0) return { dollars: '', cents: '' };
+            const parts = amount.toFixed(2).split('.');
+            return { dollars: parts[0], cents: parts[1] };
+        }
+
+        function populateFromForm() {
+            // Clear existing check values
+            for (let i = 1; i <= 27; i++) {
+                document.querySelectorAll(`.check${i}_dollars`).forEach(elem => elem.textContent = '');
+                document.querySelectorAll(`.check${i}_cents`).forEach(elem => elem.textContent = '');
+            }
+
+            // Get location and date
+            const location = document.getElementById('location').value;
+            const date = document.getElementById('depositDate').value;
+            
+            if (location) {
+                updateAccount();
+            }
+            
+            if (date) {
+                updateDisplayDate();
+            }
+
+            // Get currency
+            const currency = parseFloat(document.getElementById('currencyAmount').value) || 0;
+            const currencyParts = splitDollarsAndCents(currency);
+            document.querySelectorAll('.currency_dollars').forEach(elem => elem.textContent = currencyParts.dollars);
+            document.querySelectorAll('.currency_cents').forEach(elem => elem.textContent = currencyParts.cents);
+
+            // Get coins
+            const coins = parseFloat(document.getElementById('coinsAmount').value) || 0;
+            const coinsParts = splitDollarsAndCents(coins);
+            document.querySelectorAll('.coins_dollars').forEach(elem => elem.textContent = coinsParts.dollars);
+            document.querySelectorAll('.coins_cents').forEach(elem => elem.textContent = coinsParts.cents);
+
+            // Parse checks
+            const checksInput = document.getElementById('checksInput').value;
+            if (checksInput) {
+                const checkAmounts = checksInput.split(',').map(c => parseFloat(c.trim())).filter(c => !isNaN(c));
+                checkAmounts.forEach((amount, index) => {
+                    if (index < 27) {
+                        const parts = splitDollarsAndCents(amount);
+                        document.querySelectorAll(`.check${index + 1}_dollars`).forEach(elem => elem.textContent = parts.dollars);
+                        document.querySelectorAll(`.check${index + 1}_cents`).forEach(elem => elem.textContent = parts.cents);
+                    }
+                });
+            }
+
+            // Get backside total
+            const backside = parseFloat(document.getElementById('backsideAmount').value) || 0;
+            const backsideParts = splitDollarsAndCents(backside);
+            document.querySelectorAll('.backside_dollars').forEach(elem => elem.textContent = backsideParts.dollars);
+
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let totalDollars = 0;
+            let totalCents = 0;
+
+            // Currency
+            const currencyD = parseInt(document.querySelector('.currency_dollars').textContent) || 0;
+            const currencyC = parseInt(document.querySelector('.currency_cents').textContent) || 0;
+            
+            // Coins
+            const coinsD = parseInt(document.querySelector('.coins_dollars').textContent) || 0;
+            const coinsC = parseInt(document.querySelector('.coins_cents').textContent) || 0;
+            
+            // Backside
+            const backsideD = parseInt(document.querySelector('.backside_dollars').textContent) || 0;
+
+            totalDollars += currencyD + coinsD + backsideD;
+            totalCents += currencyC + coinsC;
+
+            // Checks
+            for (let i = 1; i <= 27; i++) {
+                const d = parseInt(document.querySelector(`.check${i}_dollars`).textContent) || 0;
+                const c = parseInt(document.querySelector(`.check${i}_cents`).textContent) || 0;
+                totalDollars += d;
+                totalCents += c;
+            }
+
+            totalDollars += Math.floor(totalCents / 100);
+            totalCents = totalCents % 100;
+
+            document.querySelectorAll('.total_dollars').forEach(elem => {
+                elem.textContent = totalDollars.toLocaleString();
+            });
+            document.querySelectorAll('.total_cents').forEach(elem => {
+                elem.textContent = totalCents.toString().padStart(2, '0');
+            });
+        }
+
+        function clearForm() {
+            document.getElementById('location').value = '';
+            document.getElementById('depositDate').valueAsDate = new Date();
+            document.getElementById('currencyAmount').value = '';
+            document.getElementById('coinsAmount').value = '';
+            document.getElementById('checksInput').value = '';
+            document.getElementById('backsideAmount').value = '';
+            
+            document.querySelectorAll('.currency_dollars').forEach(elem => elem.textContent = '');
+            document.querySelectorAll('.currency_cents').forEach(elem => elem.textContent = '');
+            document.querySelectorAll('.coins_dollars').forEach(elem => elem.textContent = '');
+            document.querySelectorAll('.coins_cents').forEach(elem => elem.textContent = '');
+            document.querySelectorAll('.backside_dollars').forEach(elem => elem.textContent = '');
+            
+            for (let i = 1; i <= 27; i++) {
+                document.querySelectorAll(`.check${i}_dollars`).forEach(elem => elem.textContent = '');
+                document.querySelectorAll(`.check${i}_cents`).forEach(elem => elem.textContent = '');
+            }
+            
+            updateAccount();
+            updateDisplayDate();
+            calculateTotal();
+        }
+
+        function printSlip() {
+            window.print();
+        }
+
+        // Auto-populate from URL parameters (for Jotform integration)
+        function loadFromURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            
+            const location = params.get('location');
+            const date = params.get('date');
+            const currency = params.get('currency');
+            const coins = params.get('coins');
+            const checks = params.get('checks');
+            const backside = params.get('backside');
+
+            if (location) {
+                document.getElementById('location').value = location;
+                updateAccount();
+            }
+
+            if (date) {
+                document.getElementById('depositDate').value = date;
+                updateDisplayDate();
+            }
+
+            if (currency) {
+                document.getElementById('currencyAmount').value = currency;
+            }
+
+            if (coins) {
+                document.getElementById('coinsAmount').value = coins;
+            }
+
+            if (checks) {
+                document.getElementById('checksInput').value = checks;
+            }
+
+            if (backside) {
+                document.getElementById('backsideAmount').value = backside;
+            }
+
+            // If any URL params exist, auto-populate the slip
+            if (location || date || currency || coins || checks || backside) {
+                populateFromForm();
+            }
+        }
+
+        // Load data on page load
+        loadFromURLParams();
+    </script>
+</body>
+</html>
