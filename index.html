@@ -567,19 +567,33 @@
         function loadFromURLParams() {
             const params = new URLSearchParams(window.location.search);
             
-            const location = params.get('location');
-            const date = params.get('date');
+            let location = params.get('location');
+            let date = params.get('date');
             const currency = params.get('currency');
             const coins = params.get('coins');
             const checks = params.get('checks');
             const backside = params.get('backside');
 
+            // Handle location - decode URL encoding and normalize
             if (location) {
+                location = decodeURIComponent(location);
+                // Map full addresses to our internal codes
+                if (location === '1814 Paris Road') {
+                    location = 'paris';
+                } else if (location === '1001 W Broadway') {
+                    location = 'broadway';
+                }
                 document.getElementById('location').value = location;
                 updateAccount();
             }
 
+            // Handle date - convert from MM-DD-YYYY to YYYY-MM-DD if needed
             if (date) {
+                // Check if date is in MM-DD-YYYY format
+                if (date.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                    const parts = date.split('-');
+                    date = `${parts[2]}-${parts[0]}-${parts[1]}`; // Convert to YYYY-MM-DD
+                }
                 document.getElementById('depositDate').value = date;
                 updateDisplayDate();
             }
