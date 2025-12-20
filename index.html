@@ -195,30 +195,29 @@
 <body>
     <div class="container">
         <div class="controls">
-            <h3>Manual Entry Mode</h3>
+            <h3>D&H Deposit Slip Generator</h3>
             <label for="location">Select Pharmacy Location:</label>
-            <select id="location" onchange="updateAccount()">
+            <select id="location" onchange="updateAndPopulate()">
                 <option value="">-- Select Location --</option>
                 <option value="paris">1814 Paris Road</option>
                 <option value="broadway">1001 W Broadway</option>
             </select>
             
             <label for="depositDate">Deposit Date:</label>
-            <input type="date" id="depositDate" value="">
+            <input type="date" id="depositDate" value="" onchange="populateFromForm()">
             
             <label for="currencyAmount">Currency Amount (total dollars and cents):</label>
-            <input type="number" id="currencyAmount" step="0.01" placeholder="150.00">
+            <input type="number" id="currencyAmount" step="0.01" placeholder="150.00" oninput="populateFromForm()">
             
             <label for="coinsAmount">Coins Amount (total dollars and cents):</label>
-            <input type="number" id="coinsAmount" step="0.01" placeholder="25.50">
+            <input type="number" id="coinsAmount" step="0.01" placeholder="25.50" oninput="populateFromForm()">
             
             <label for="checksInput">Check Amounts (comma-separated):</label>
-            <textarea id="checksInput" rows="3" placeholder="45.50, 125.75, 89.00"></textarea>
+            <textarea id="checksInput" rows="3" placeholder="45.50, 125.75, 89.00" oninput="populateFromForm()"></textarea>
             
             <label for="backsideAmount">Total from Backside/Attached List:</label>
-            <input type="number" id="backsideAmount" step="0.01" placeholder="0.00">
+            <input type="number" id="backsideAmount" step="0.01" placeholder="0.00" oninput="populateFromForm()">
             
-            <button onclick="populateFromForm()">Fill Deposit Slip</button>
             <button onclick="clearForm()">Clear Form</button>
             <button onclick="printSlip()">Print Deposit Slip</button>
             
@@ -403,6 +402,11 @@
                     elem.textContent = '';
                 });
             }
+        }
+
+        function updateAndPopulate() {
+            updateAccount();
+            populateFromForm();
         }
 
         document.getElementById('depositDate').valueAsDate = new Date();
